@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>GeoVisor SIG Profesional</title>
+
+<!-- LEAFLET -->
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<!-- DRAW -->
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet-draw/dist/leaflet.draw.css"/>
+
+<script src="https://unpkg.com/leaflet-draw/dist/leaflet.draw.js"></script>
+
+<!-- MEASURE -->
+
+<link rel="stylesheet"
+href="https://unpkg.com/leaflet-measure/dist/leaflet-measure.css"/>
+
+<script src="https://unpkg.com/leaflet-measure/dist/leaflet-measure.js"></script>
+
+<!-- SORTABLE -->
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<style>
+
+html,body{
+
+    margin:0;
+    padding:0;
+
+    width:100%;
+    height:100%;
+
+    overflow:hidden;
+
+    font-family:Arial;
+
+}
+
+#map{
+
+    width:100%;
+    height:100%;
+
+}
+
+
+/* SIDEBAR */
+
+#sidebar{
+
+    position:absolute;
+
+    top:10px;
+    left:10px;
+
+    width:320px;
+
+    max-height:92vh;
+
+    overflow:auto;
+
+    background:white;
+
+    z-index:2000;
+
+    padding:15px;
+
+    border-radius:10px;
+
+    box-shadow:0 0 15px rgba(0,0,0,0.3);
+
+}
+
+.capa-item{
+
+    background:#f7f7f7;
+
+    border:1px solid #ccc;
+
+    border-radius:5px;
+
+    padding:8px;
+
+    margin-bottom:5px;
+
+    cursor:move;
+
+}
+
+.capa-item:hover{
+
+    background:#ececec;
+
+}
+
+.layer-tools{
+
+    margin-top:5px;
+
+}
+
+
+/* TABLA */
+
+#tablaAtributos{
+
+    position:absolute;
+
+    bottom:20px;
+    right:20px;
+
+    width:600px;
+
+    height:300px;
+
+    background:white;
+
+    z-index:3000;
+
+    border-radius:10px;
+
+    overflow:hidden;
+
+    resize:both;
+
+    box-shadow:0 0 15px rgba(0,0,0,0.3);
+
+}
+
+#tablaHeader{
+
+    background:#333;
+
+    color:white;
+
+    padding:10px;
+
+    cursor:move;
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+}
+
+#tablaContenido{
+
+    width:100%;
+    height:calc(100% - 50px);
+
+    overflow:auto;
+
+}
+
+#tablaContenido table{
+
+    width:100%;
+
+    border-collapse:collapse;
+
+}
+
+#tablaContenido th,
+#tablaContenido td{
+
+    border:1px solid #ccc;
+
+    padding:5px;
+
+    font-size:12px;
+
+}
+
+#tablaContenido th{
+
+    background:#f0f0f0;
+
+    position:sticky;
+
+    top:0;
+
+}
+
+#cerrarTabla{
+
+    background:red;
+
+    color:white;
+
+    border:none;
+
+    padding:5px 10px;
+
+    cursor:pointer;
+
+    border-radius:5px;
+
+}
+
+
+/* BOTONES */
+
+button{
+
+    width:100%;
+
+    margin-top:5px;
+
+    padding:8px;
+
+    cursor:pointer;
+
+}
+
+
+/* BUSCADOR */
+
+#busqueda{
+
+    width:100%;
+
+    padding:8px;
+
+    margin-bottom:10px;
+
+}
+
+
+/* ERROR */
+
+#error{
+
+    color:red;
+
+    font-size:12px;
+
+    margin-top:10px;
+
+}
+
+
+/* LEYENDA */
+
+.legend{
+
+    position:absolute;
+
+    bottom:20px;
+    left:350px;
+
+    background:white;
+
+    z-index:2000;
+
+    padding:10px;
+
+    border-radius:10px;
+
+    box-shadow:0 0 10px rgba(0,0,0,0.3);
+
+}
+
+</style>
+
+</head>
+<body>
+
+
+<!-- SIDEBAR -->
+
+<div id="sidebar">
+
+<h2>GeoVisor SIG</h2>
+
+<input type="text"
+id="busqueda"
+placeholder="Buscar entidad...">
+
+<hr>
+
+<div id="listaCapas">
+
+<div class="capa-item">
+<input type="checkbox" id="suelos"> Suelos
+</div>
+
+<div class="capa-item">
+<input type="checkbox" id="rios"> Ríos Menores
+</div>
+
+<div class="capa-item">
+<input type="checkbox" id="poblacion"> Población
+</div>
+
+<div class="capa-item">
+<input type="checkbox" id="plus"> PLUS
+</div>
+
+<div class="capa-item">
+<input type="checkbox" id="geologia"> Geología
+</div>
+
+<div class="capa-item">
+<input type="checkbox" id="fisiografia"> Fisiografía
+</div>
+
+<div class="capa-item">
+<input type="checkbox" id="ecoregiones"> Ecoregiones
+</div>
+
+<div class="capa-item">
+<input type="checkbox" id="deslizamiento"> Deslizamiento
+</div>
+
+<div class="capa-item">
+<input type="checkbox" id="cumat"> CUMAT
+</div>
+
+</div>
+
+<hr>
+
+<button onclick="zoomBolivia()">
+Zoom Bolivia
+</button>
+
+<button onclick="exportarGeoJSON()">
+Exportar GeoJSON
+</button>
+
+<button onclick="exportarCSV()">
+Exportar CSV
+</button>
+
+<button onclick="imprimirMapa()">
+Imprimir Mapa
+</button>
+
+<button onclick="limpiarDibujos()">
+Limpiar Dibujos
+</button>
+
+<hr>
+
+<div id="info">
+
+Capas activas: 0
+
+</div>
+
+<div id="error"></div>
+
+</div>
+
+
+<!-- MAPA -->
+
+<div id="map"></div>
+
+
+<!-- TABLA ATRIBUTOS -->
+
+<div id="tablaAtributos">
+
+<div id="tablaHeader">
+
+<span>Tabla de Atributos</span>
+
+<button id="cerrarTabla">
+X
+</button>
+
+</div>
+
+<div id="tablaContenido">
+
+<table>
+
+<thead id="tablaHead"></thead>
+
+<tbody id="tablaBody"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+
+<!-- LEYENDA -->
+
+<div class="legend">
+
+<b>Leyenda</b>
+
+<br><br>
+
+<div style="color:green;">■ Suelos</div>
+<div style="color:blue;">■ Ríos</div>
+<div style="color:red;">■ Población</div>
+<div style="color:orange;">■ PLUS</div>
+<div style="color:brown;">■ Geología</div>
+<div style="color:purple;">■ Fisiografía</div>
+<div style="color:gold;">■ Ecoregiones</div>
+<div style="color:gray;">■ Deslizamiento</div>
+<div style="color:pink;">■ CUMAT</div>
+
+</div>
+
+
+<script>
+
+// ======================================
+// SUPABASE
+// ======================================
+
+const URL =
+"https://kflsrknbfpkmxvualxpu.supabase.co/rest/v1/";
+
+const KEY =
+"sb_publishable_D8y_btUL23kImtIEsUmyMg_DUiSAsl4";
+
+
+// ======================================
+// MAPA
+// ======================================
+
+const map =
+L.map('map').setView([-19,-64],6);
+
+
+// ======================================
+// BASEMAPS
+// ======================================
+
+const osm = L.tileLayer(
+
+'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+
+{
+    attribution:'OSM'
+}
+
+).addTo(map);
+
+
+const satelite = L.tileLayer(
+
+'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+
+{
+    attribution:'ESRI'
+}
+
+);
+
+
+const dark = L.tileLayer(
+
+'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+
+{
+    attribution:'Carto'
+}
+
+);
+
+
+L.control.layers({
+
+    "OpenStreetMap":osm,
+    "Satelital":satelite,
+    "Dark":dark
+
+}).addTo(map);
+
+
+// ======================================
+// ESCALA
+// ======================================
+
+L.control.scale().addTo(map);
+
+
+// ======================================
+// MEDICION
+// ======================================
+
+new L.Control.Measure({
+
+    primaryLengthUnit:'kilometers',
+    secondaryLengthUnit:'meters'
+
+}).addTo(map);
+
+
+// ======================================
+// DIBUJOS
+// ======================================
+
+const drawnItems =
+new L.FeatureGroup();
+
+map.addLayer(drawnItems);
+
+const drawControl =
+new L.Control.Draw({
+
+    edit:{
+        featureGroup:drawnItems
+    }
+
+});
+
+map.addControl(drawControl);
+
+map.on(L.Draw.Event.CREATED,function(e){
+
+    drawnItems.addLayer(e.layer);
+
+});
+
+
+// ======================================
+// VARIABLES
+// ======================================
+
+const capas = {};
+const exportData = [];
+const tablaGlobal = [];
+
+
+// ======================================
+// DRAG CAPAS
+// ======================================
+
+new Sortable(
+
+document.getElementById("listaCapas"),
+
+{
+    animation:150
+}
+
+);
+
+
+// ======================================
+// CAPAS
+// ======================================
+
+const configuracionCapas = [
+
+["suelos","suelos_geojson","suelos","green"],
+["rios","rios_menores_geojson","rios","blue"],
+["poblacion","poblacion_geojson","poblacion","red"],
+["plus","plus_geojson","plus","orange"],
+["geologia","geologia_geojson","geologia","brown"],
+["fisiografia","fisiografia_geojson","fisiografia","purple"],
+["ecoregiones","ecoregiones_geojson","ecoregiones","gold"],
+["deslizamiento","deslizamiento_geojson","deslizamiento","gray"],
+["cumat","cumat_geojson","cumat","pink"]
+
+];
+
+
+// ======================================
+// EVENTOS
+// ======================================
+
+configuracionCapas.forEach(c=>{
+
+    activarEvento(
+        c[0],
+        c[1],
+        c[2],
+        c[3]
+    );
+
+});
+
+
+// ======================================
+// ACTIVAR EVENTO
+// ======================================
+
+function activarEvento(id,api,nombre,color){
+
+    document
+    .getElementById(id)
+    .addEventListener("change",(e)=>{
+
+        toggleCapa(
+            api,
+            nombre,
+            color,
+            e.target.checked
+        );
+
+    });
+
+}
+
+
+// ======================================
+// TOGGLE
+// ======================================
+
+async function toggleCapa(api,nombre,color,estado){
+
+    if(estado){
+
+        await cargarCapa(
+            api,
+            nombre,
+            color
+        );
+
+    }else{
+
+        quitarCapa(nombre);
+
+    }
+
+}
+
+
+// ======================================
+// CARGAR CAPA
+// ======================================
+
+async function cargarCapa(api,nombre,color){
+
+    try{
+
+        document
+        .getElementById("error")
+        .innerHTML = "";
+
+        const response = await fetch(
+
+            URL + api + "?select=*",
+
+            {
+
+                headers:{
+
+                    apikey:KEY,
+
+                    Authorization:
+                    "Bearer " + KEY
+
+                }
+
+            }
+
+        );
+
+        const data =
+        await response.json();
+
+
+        if(!data ||
+           data.length === 0 ||
+           !data[0].geojson){
+
+            throw new Error(
+                "GeoJSON inválido"
+            );
+
+        }
+
+
+        const geojson =
+        data[0].geojson;
+
+
+        const layer =
+        L.geoJSON(geojson,{
+
+            style:{
+
+                color:color,
+                weight:2,
+                fillOpacity:0.5
+
+            },
+
+            pointToLayer:
+            function(feature,latlng){
+
+                return L.circleMarker(latlng,{
+
+                    radius:6,
+                    fillColor:color,
+                    color:"#000",
+                    weight:1,
+                    fillOpacity:0.8
+
+                });
+
+            },
+
+            onEachFeature:
+            function(feature,layer){
+
+                let html = "";
+
+                for(let key in feature.properties){
+
+                    html +=
+
+                    "<b>" + key + "</b>: " +
+
+                    feature.properties[key] +
+
+                    "<br>";
+
+                }
+
+                layer.bindPopup(html);
+
+
+                layer.on("click",function(){
+
+                    generarTablaCompleta(
+                        geojson.features
+                    );
+
+                });
+
+            }
+
+        });
+
+
+        layer.addTo(map);
+
+        capas[nombre] = layer;
+
+        exportData.push(geojson);
+
+        actualizarInfo();
+
+
+        tablaGlobal.push(...geojson.features);
+
+
+        try{
+
+            const bounds =
+            layer.getBounds();
+
+            if(bounds.isValid()){
+
+                map.fitBounds(bounds);
+
+            }
+
+        }
+        catch(e){}
+
+    }
+    catch(error){
+
+        console.error(error);
+
+        document
+        .getElementById("error")
+        .innerHTML =
+
+        error.message;
+
+    }
+
+}
+
+
+// ======================================
+// TABLA COMPLETA
+// ======================================
+
+function generarTablaCompleta(features){
+
+    const head =
+    document.getElementById("tablaHead");
+
+    const body =
+    document.getElementById("tablaBody");
+
+    head.innerHTML = "";
+    body.innerHTML = "";
+
+
+    if(features.length === 0){
+
+        return;
+
+    }
+
+
+    const columnas =
+    Object.keys(
+        features[0].properties
+    );
+
+
+    // HEAD
+
+    let headHTML = "<tr>";
+
+    columnas.forEach(c=>{
+
+        headHTML +=
+        "<th>" + c + "</th>";
+
+    });
+
+    headHTML += "</tr>";
+
+    head.innerHTML = headHTML;
+
+
+    // BODY
+
+    let bodyHTML = "";
+
+    features.forEach(f=>{
+
+        bodyHTML += "<tr>";
+
+        columnas.forEach(c=>{
+
+            bodyHTML +=
+
+            "<td>" +
+
+            (f.properties[c] ?? "") +
+
+            "</td>";
+
+        });
+
+        bodyHTML += "</tr>";
+
+    });
+
+    body.innerHTML = bodyHTML;
+
+
+    document
+    .getElementById("tablaAtributos")
+    .style.display = "block";
+
+}
+
+
+// ======================================
+// QUITAR CAPA
+// ======================================
+
+function quitarCapa(nombre){
+
+    if(capas[nombre]){
+
+        map.removeLayer(capas[nombre]);
+
+        delete capas[nombre];
+
+        actualizarInfo();
+
+    }
+
+}
+
+
+// ======================================
+// INFO
+// ======================================
+
+function actualizarInfo(){
+
+    document
+    .getElementById("info")
+    .innerHTML =
+
+    "Capas activas: " +
+
+    Object.keys(capas).length;
+
+}
+
+
+// ======================================
+// BUSCADOR
+// ======================================
+
+document
+.getElementById("busqueda")
+.addEventListener("keyup",function(){
+
+    const value =
+    this.value.toLowerCase();
+
+    const rows =
+    document.querySelectorAll(
+        "#tablaBody tr"
+    );
+
+    rows.forEach(r=>{
+
+        const text =
+        r.innerText.toLowerCase();
+
+        r.style.display =
+        text.includes(value)
+        ? ""
+        : "none";
+
+    });
+
+});
+
+
+// ======================================
+// EXPORTAR CSV
+// ======================================
+
+function exportarCSV(){
+
+    if(tablaGlobal.length === 0){
+
+        return;
+
+    }
+
+    const columnas =
+    Object.keys(
+        tablaGlobal[0].properties
+    );
+
+    let csv =
+    columnas.join(",") + "\n";
+
+
+    tablaGlobal.forEach(f=>{
+
+        let row = [];
+
+        columnas.forEach(c=>{
+
+            row.push(
+                f.properties[c]
+            );
+
+        });
+
+        csv += row.join(",") + "\n";
+
+    });
+
+    const blob =
+    new Blob([csv]);
+
+    const a =
+    document.createElement("a");
+
+    a.href =
+    URL.createObjectURL(blob);
+
+    a.download =
+    "atributos.csv";
+
+    a.click();
+
+}
+
+
+// ======================================
+// EXPORTAR GEOJSON
+// ======================================
+
+function exportarGeoJSON(){
+
+    const dataStr =
+
+    "data:text/json;charset=utf-8," +
+
+    encodeURIComponent(
+
+        JSON.stringify(exportData)
+
+    );
+
+    const dl =
+    document.createElement('a');
+
+    dl.setAttribute(
+        "href",
+        dataStr
+    );
+
+    dl.setAttribute(
+        "download",
+        "capas.geojson"
+    );
+
+    document.body.appendChild(dl);
+
+    dl.click();
+
+    dl.remove();
+
+}
+
+
+// ======================================
+// IMPRIMIR
+// ======================================
+
+function imprimirMapa(){
+
+    window.print();
+
+}
+
+
+// ======================================
+// LIMPIAR
+// ======================================
+
+function limpiarDibujos(){
+
+    drawnItems.clearLayers();
+
+}
+
+
+// ======================================
+// ZOOM
+// ======================================
+
+function zoomBolivia(){
+
+    map.setView([-16.5,-64.5],5);
+
+}
+
+
+// ======================================
+// CERRAR TABLA
+// ======================================
+
+document
+.getElementById("cerrarTabla")
+.onclick = function(){
+
+    document
+    .getElementById("tablaAtributos")
+    .style.display = "none";
+
+};
+
+
+// ======================================
+// DRAG TABLA
+// ======================================
+
+dragElement(
+document.getElementById("tablaAtributos")
+);
+
+
+function dragElement(elmnt){
+
+    let pos1=0,pos2=0,pos3=0,pos4=0;
+
+    document
+    .getElementById("tablaHeader")
+    .onmousedown = dragMouseDown;
+
+
+    function dragMouseDown(e){
+
+        e = e || window.event;
+
+        e.preventDefault();
+
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+
+        document.onmouseup =
+        closeDragElement;
+
+        document.onmousemove =
+        elementDrag;
+
+    }
+
+
+    function elementDrag(e){
+
+        e = e || window.event;
+
+        e.preventDefault();
+
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+
+        elmnt.style.top =
+
+        (elmnt.offsetTop - pos2) + "px";
+
+        elmnt.style.left =
+
+        (elmnt.offsetLeft - pos1) + "px";
+
+    }
+
+
+    function closeDragElement(){
+
+        document.onmouseup = null;
+        document.onmousemove = null;
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>
